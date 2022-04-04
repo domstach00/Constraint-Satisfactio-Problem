@@ -1,4 +1,7 @@
+import time
+
 from config import *
+from point import *
 import CONSTANTS
 import numpy as np
 
@@ -7,9 +10,21 @@ class Solve:
     def __init__(self, config: Config):
         self.config = config
         self.board = config.board
+        self.step_count = 0
 
-    def solve(self):
-        pass
+    def solve_bt(self):
+        self.step_count += 1
+
+    def solve_btfc(self):
+        self.step_count += 1
+
+    def get_empty_squares(self):
+        empty_squares: 'list[Point]'= []
+        for row in range(len(self.board)):
+            for col in range(len(self.board[row])):
+                if self.board[row][col] == 'x':
+                    empty_squares.append(Point(row, col))
+        return empty_squares
 
     def _check_unique_row_and_col(self, position):
         row, col = position
@@ -38,18 +53,38 @@ class Solve:
             print()
         print("\n")
 
-    def find_empty(self) -> (int, int):
+    def find_fist_empty(self) -> (int, int):
         for row in range(len(self.board)):
             for col in range(len(self.board[row])):
                 if self.board[row][col] == 'x':
                     return row, col
         return None
 
+    def find_min_possibility(self) -> (int, int):
+        min: Point = self.find_list_of_min_possibilities()[0]
+        return min.row, min.col
+
+
+    def find_list_of_min_possibilities(self) -> list:
+        transpose_borad = list(map(list, zip(*self.board)))
+        res: 'list[Point]' = []
+        for row in range(len(self.board)):
+            for col in range(len(self.board[row])):
+                if self.board[row][col] == 'x':
+                    row_possibilities = self.board[row].count('x')
+                    col_possibilities = transpose_borad[col].count('x')
+                    res.append(Point(
+                        row=row,
+                        col=col,
+                        dependent_values=row_possibilities + col_possibilities
+                    ))
+        res = sorted(res)
+        return res
+
 
 class SolveBinary(Solve):
     def __init__(self, config: ConfigBinary):
-        self.config = config
-        self.board = config.board
+        super().__init__(config)
 
     def __check_rows_and_columns(self, val: int, position) -> bool:
         row, col = position
@@ -98,57 +133,88 @@ class SolveBinary(Solve):
                 return False
         return True
 
-    def __same_amount_of_val(self):
-        # TODO: Fix it
-        # Check Row values
-        count_list = []
-        for row in self.board:
-            if 'x' not in row:
-                print("XC")
-                for val in CONSTANTS.GAME_BP_AVAILABLE_VALUES:
-                    count_list.append(row.count(val))
-        # Compares all the elements with the first element
-        if not self.__check_uniformity_of_list(count_list):
-            return False
-
-        # Check Col values
-        count_list = []
-        board_copy = np.array(list(self.board))
-        board_copy = board_copy.transpose()
-        board_copy = list(board_copy)
-        for col in board_copy:
-            if 'x' not in col:
-                for val in CONSTANTS.GAME_BP_AVAILABLE_VALUES:
-                    count_list.append(col.count(str(val)))
-        if not self.__check_uniformity_of_list(count_list):
-            return False
-        return True
-
+    def __same_amount_of_val(self, position):
+        pass
 
     def __valid(self, val: int, position) -> bool:
         if not self._check_unique_row_and_col(position):
             return False
-        # if not self.__same_amount_of_val():
-        #     return False
+        if not self.__same_amount_of_val(position):
+            return False
         if not self.__check_rows_and_columns(val, position):
             return False
 
         return True
 
-    def solve(self):
-        find = self.find_empty()
+    def __get_possible_values_by_valid(self, position) -> list:
+        possible_values = []
+        for val in CONSTANTS.GAME_BP_AVAILABLE_VALUES:
+            if self.__valid(val, position):
+                possible_values.append(val)
+        return possible_values
+
+    def __get_available_values_by_comapre(self, position) -> list:
+        row, col = position
+        possible_values: list = list(CONSTANTS.GAME_BP_AVAILABLE_VALUES)
+        for val in self.board[row]:
+            if val in possible_values:
+                possible_values.remove(val)
+
+        transpose_board = list(map(list, zip(*self.board)))
+        for val in transpose_board[col]:
+            if val in possible_values:
+                possible_values.remove(val)
+        return possible_values
+
+
+    def __fill_squares_without_dependencies(self, possibilities: 'list[Point]') -> bool:
+        flag = False
+        for elem in possibilities:
+            if elem.dependent_values == 0:
+                self.board[elem.row][elem.col] = self.__get_possible_values_by_valid((elem.row, elem.col))[0]
+                flag = True
+        return flag
+
+
+    def solve_btfc(self):
+        possibilities: 'list[Point]' = self.find_list_of_min_possibilities()
+        if not possibilities:
+            return True
+        self.step_count += 1
+
+        while self.__fill_squares_without_dependencies(possibilities):
+            possibilities = self.find_list_of_min_possibilities()
+            if not possibilities:
+                return True
+            self.__fill_squares_without_dependencies(possibilities)
+
+        row, col = possibilities[0].row, possibilities[0].col
+
+        for i in CONSTANTS.GAME_BP_AVAILABLE_VALUES:
+            if self.__valid(i, (row, col)):
+                self.board[row][col] = i
+                if self.solve_btfc():
+                    return True
+                self.board[row][col] = 'x'
+            if CONSTANTS.GENERAL_IF_PRINT_STEPS:
+                self.print_board()
+
+
+    def solve_bt(self):
+        find = self.find_fist_empty()
         if not find:
             return True
+        self.step_count += 1
         row, col = find
 
         for i in CONSTANTS.GAME_BP_AVAILABLE_VALUES:
             if self.__valid(i, (row, col)):
                 self.board[row][col] = i
-                if self.solve():
+                if self.solve_bt():
                     return True
                 self.board[row][col] = 'x'
-
-        self.print_board()
+        if CONSTANTS.GENERAL_IF_PRINT_STEPS:
+            self.print_board()
 
 
 class SolveFutoshiki(Solve):
@@ -159,6 +225,7 @@ class SolveFutoshiki(Solve):
         self.board_sign_horizontal = config.board_sign_horizontal
         self.board_sign_vertical = config.board_sign_vertical
         self.avalaible_numbers: list = [i for i in range(1, self.config.width + 1)]
+        self.step_count = 0
 
     def __check_equalities(self, val, position):
         row, col = position
@@ -218,7 +285,6 @@ class SolveFutoshiki(Solve):
         return self.board[row][col] in self.avalaible_numbers
 
     def __valid(self, val: int, position):
-        self.print_board()
         if not self.__check_unique_val_in_row_and_col(val, position):
             return False
         if not self._check_unique_row_and_col(position):
@@ -227,36 +293,72 @@ class SolveFutoshiki(Solve):
             return False
         return True
 
-    def solve(self):
-        find = self.find_empty()
+    def __get_possible_values_by_valid(self, position) -> list:
+        possible_values = []
+        for val in self.avalaible_numbers:
+            if self.__valid(val, position):
+                possible_values.append(val)
+        return possible_values
+
+    def __get_possible_values_bu_compare(self, position) -> list:
+        row, col = position
+        possible_values: list = list(self.avalaible_numbers)
+        for val in self.board[row]:
+            if val in possible_values:
+                possible_values.remove(val)
+
+        transpose_board = list(map(list, zip(*self.board)))
+        for val in transpose_board[col]:
+            if val in possible_values:
+                possible_values.remove(val)
+        return possible_values
+
+    def __fill_squares_without_dependencies(self, possibilities):
+        flag = False
+        for elem in possibilities:
+            if elem.dependent_values == 0:
+                self.board[elem.row][elem.col] = self.__get_possible_values_by_valid((elem.row, elem.col))[0]
+                flag = True
+        return flag
+
+
+    def solve_btfc(self):
+        possibilities: 'list[Point]' = self.find_list_of_min_possibilities()
+        if not possibilities:
+            return True
+        self.step_count += 1
+
+        while self.__fill_squares_without_dependencies(possibilities):
+            possibilities = self.find_list_of_min_possibilities()
+            if not possibilities:
+                return True
+        row, col = possibilities[0].row, possibilities[0].col
+
+        for i in self.__get_possible_values_by_valid((row, col)):
+            if self.__valid(i, (row, col)):
+                self.board[row][col] = i
+                if self.solve_btfc():
+                    return True
+                self.board[row][col] = 'x'
+
+        if CONSTANTS.GENERAL_IF_PRINT_STEPS:
+            print(f"Step: {self.step_count}")
+            self.print_board()
+
+
+    def solve_bt(self):
+        find = self.find_fist_empty()
         if not find:
             return True
+        self.step_count += 1
         row, col = find
 
         for i in self.avalaible_numbers:
             if self.__valid(i, (row, col)):
                 self.board[row][col] = i
-                if self.solve():
+                if self.solve_bt():
                     return True
                 self.board[row][col] = 'x'
-
-
-
-
-
-def binary():
-    cp = ConfigBinary(6)
-    csp = SolveBinary(cp)
-    csp.solve()
-    csp.print_board()
-
-
-def futoshiki():
-    cf = ConfigFutoshiki(6)
-    sf = SolveFutoshiki(cf)
-    sf.solve()
-    sf.print_board()
-
-
-if __name__ == '__main__':
-    binary()
+        if CONSTANTS.GENERAL_IF_PRINT_STEPS:
+            print(f"Step: {self.step_count}")
+            self.print_board()
