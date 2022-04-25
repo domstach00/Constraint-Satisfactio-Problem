@@ -1,9 +1,10 @@
+import random
 import time
-
+from graph.observator import Observator
+from graph.graph import Graph
 from config import *
 from point import *
 import CONSTANTS
-import numpy as np
 
 
 class Solve:
@@ -13,10 +14,10 @@ class Solve:
         self.step_count = 0
 
     def solve_bt(self):
-        self.step_count += 1
+        pass
 
     def solve_btfc(self):
-        self.step_count += 1
+        pass
 
     def get_empty_squares(self):
         empty_squares: 'list[Point]'= []
@@ -36,11 +37,10 @@ class Solve:
                 return False
 
         # Check Col unique
-        board_copy = np.array(list(self.board))
-        board_copy = board_copy.transpose()
-        unique_col = board_copy[col]
+        transpose_board = list(map(list, zip(*self.board)))
+        unique_col = transpose_board[col]
         for i in range(col):
-            if list(unique_col) == list(board_copy[i]):
+            if list(unique_col) == list(transpose_board[i]):
                 return False
         return True
 
@@ -60,10 +60,20 @@ class Solve:
                     return row, col
         return None
 
+    def find_random(self) -> (int, int):
+        count = 0
+        while True:
+            random_row = random.randint(0, self.config.width - 1)
+            random_col = random.randint(0, self.config.height - 1)
+            if self.board[random_row][random_col] != 'x':
+                return random_row, random_col
+            count += 1
+            if count >= 30:
+                return self.find_fist_empty()
+
     def find_min_possibility(self) -> (int, int):
         min: Point = self.find_list_of_min_possibilities()[0]
         return min.row, min.col
-
 
     def find_list_of_min_possibilities(self) -> list:
         transpose_borad = list(map(list, zip(*self.board)))
@@ -83,8 +93,12 @@ class Solve:
 
 
 class SolveBinary(Solve):
+
     def __init__(self, config: ConfigBinary):
         super().__init__(config)
+        self.solutions = []
+        self.start_time = time.time()
+        self.observators: 'list[Observator]' = []
 
     def __check_rows_and_columns(self, val: int, position) -> bool:
         row, col = position
@@ -133,17 +147,28 @@ class SolveBinary(Solve):
                 return False
         return True
 
-    def __same_amount_of_val(self, position):
-        pass
+    def __same_amount_of_val(self):
+        for row in self.board:
+            if 'x' not in row:
+                if (row.count(0) + row.count('0')) != (row.count(1) + row.count('1')):
+                    return False
+
+        transpose_borad = list(map(list, zip(*self.board)))
+
+        for col in transpose_borad:
+            if 'x' not in col:
+                if (col.count(0) + col.count('0')) != (col.count(1) + col.count('1')):
+                    return False
+
+        return True
 
     def __valid(self, val: int, position) -> bool:
         if not self._check_unique_row_and_col(position):
             return False
-        if not self.__same_amount_of_val(position):
+        if not self.__same_amount_of_val():
             return False
         if not self.__check_rows_and_columns(val, position):
             return False
-
         return True
 
     def __get_possible_values_by_valid(self, position) -> list:
@@ -211,10 +236,25 @@ class SolveBinary(Solve):
             if self.__valid(i, (row, col)):
                 self.board[row][col] = i
                 if self.solve_bt():
-                    return True
+                    self.solutions.append(list(self.board))
+                    self.__notify(f'Binary_{self.config.width}x{self.config.height}', 'back_tracking')
                 self.board[row][col] = 'x'
         if CONSTANTS.GENERAL_IF_PRINT_STEPS:
             self.print_board()
+
+    def __notify(self, game_name: str, search_type: str):
+        self.observators.append(Observator(
+            measured_time=time.time() - self.start_time,
+            node_count=self.step_count,
+            solutions=len(self.solutions),
+            game_name=game_name,
+            search_type=search_type
+        ))
+
+    def end(self):
+        graph = Graph(self.observators, self.config)
+        graph.make_graph()
+
 
 
 class SolveFutoshiki(Solve):
@@ -226,6 +266,9 @@ class SolveFutoshiki(Solve):
         self.board_sign_vertical = config.board_sign_vertical
         self.avalaible_numbers: list = [i for i in range(1, self.config.width + 1)]
         self.step_count = 0
+        self.solutions = []
+        self.start_time = time.time()
+        self.observators: 'list[Observator]' = []
 
     def __check_equalities(self, val, position):
         row, col = position
@@ -263,22 +306,30 @@ class SolveFutoshiki(Solve):
                     return False
         return True
 
-    def __check_unique_val_in_row_and_col(self, val: int, position):
+    def __check_unique_val_in_row_and_col(self, new_val: int, position):
         row, col = position
 
-        # Check Row value unique
-        if val in self.board[row]:
-            return False
+        check_row = self.board[row]
 
-        if row == 0 and col == 2 and val == 3:
-            pass
+        for val in self.avalaible_numbers:
+            flag = 0
+            if new_val == val:
+                flag = 1
+            if check_row.count(val) + check_row.count(str(val)) + flag > 1:
+                return False
 
         # Check Col value unique
-        board_copy = np.array(list(self.board))
-        board_copy = board_copy.transpose()
-        lista: list = list(board_copy[col])
-        if str(val) in lista:
-            return False
+        transpose_board = list(map(list, zip(*self.board)))
+        check_col = transpose_board[col]
+
+
+        for val in self.avalaible_numbers:
+            flag = 0
+            if new_val == val:
+                flag = 1
+            if check_col.count(val) + check_col.count(str(val)) + flag > 1:
+                return False
+
         return True
 
     def __check_is_number(self, row, col):
@@ -357,8 +408,22 @@ class SolveFutoshiki(Solve):
             if self.__valid(i, (row, col)):
                 self.board[row][col] = i
                 if self.solve_bt():
-                    return True
+                    self.solutions.append(list(self.board))
+                    self.__notify(f'Futoshiki_{self.config.width}x{self.config.height}', 'back_tracking')
                 self.board[row][col] = 'x'
         if CONSTANTS.GENERAL_IF_PRINT_STEPS:
             print(f"Step: {self.step_count}")
             self.print_board()
+
+    def __notify(self, game_name: str, search_type: str):
+        self.observators.append(Observator(
+            measured_time=time.time() - self.start_time,
+            node_count=self.step_count,
+            solutions=len(self.solutions),
+            game_name=game_name,
+            search_type=search_type
+        ))
+
+    def end(self):
+        graph = Graph(self.observators, self.config)
+        graph.make_graph()

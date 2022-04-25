@@ -2,21 +2,21 @@ from solve import *
 from config import *
 import threading
 
+
 def binary():
-    cp = ConfigBinary(10)
+    cp = ConfigBinary(8)
     csp = SolveBinary(cp)
     csp.solve_bt()
-    csp.print_board()
-    print(csp.step_count)
+    csp.print_board(csp.solutions[0])
+    print(f"Solutions: {len(csp.solutions)}")
 
 
 def futoshiki():
     cf = ConfigFutoshiki(4)
     sf = SolveFutoshiki(cf)
     sf.solve_bt()
-    print("BT")
-    sf.print_board()
-    print(sf.step_count)
+    sf.end()
+    print(f'Solutions: {len(sf.solutions)}')
 
 
 def futoshiki2():
