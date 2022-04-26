@@ -9,6 +9,7 @@ GAME_BP_MAX_SAME_VAL_IN_ROW = 3
 
 """GAME 'Futoshiki Puzzle'"""
 GAME_FP_SIGNS_LIST = ['-', '>', '<']
+GAME_FP_FC_STEPS_FORWARD: int = 3
 
 """GRAPH SETTINGS"""
 GRAPH_STYLE = 'ggplot'

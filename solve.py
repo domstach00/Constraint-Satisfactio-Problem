@@ -12,12 +12,16 @@ class Solve:
         self.config = config
         self.board = config.board
         self.step_count = 0
+        self.observators: 'list[Observator]' = []
 
     def solve_bt(self):
         pass
 
     def solve_btfc(self):
         pass
+
+    def get_observators(self):
+        return self.observators
 
     def get_empty_squares(self):
         empty_squares: 'list[Point]'= []
@@ -98,7 +102,6 @@ class SolveBinary(Solve):
         super().__init__(config)
         self.solutions = []
         self.start_time = time.time()
-        self.observators: 'list[Observator]' = []
         self.observators.append(Observator(
             measured_time=0,
             node_count=0,
@@ -266,15 +269,12 @@ class SolveBinary(Solve):
 class SolveFutoshiki(Solve):
 
     def __init__(self, config: ConfigFutoshiki):
-        self.config = config
-        self.board = config.board
+        super().__init__(config)
         self.board_sign_horizontal = config.board_sign_horizontal
         self.board_sign_vertical = config.board_sign_vertical
         self.avalaible_numbers: list = [i for i in range(1, self.config.width + 1)]
-        self.step_count = 0
         self.solutions = []
         self.start_time = time.time()
-        self.observators: 'list[Observator]' = []
         self.observators.append(Observator(
             measured_time=0,
             node_count=0,
@@ -385,6 +385,22 @@ class SolveFutoshiki(Solve):
                 flag = True
         return flag
 
+    def __find_possible_next_values(self, position) -> list:
+        possible_values = []
+        copied_board = list(self.board)
+
+        for val in self.avalaible_numbers:
+            if self.__valid(val, position):
+                possible_values.append(val)
+
+
+    def solve_fc(self):
+        find = self.find_fist_empty()
+        if not find:
+            return True
+        self.step_count += 1
+        possible_next_values: list = self.__find_possible_next_values(find)
+
     def solve_btfc(self):
         possibilities: 'list[Point]' = self.find_list_of_min_possibilities()
         if not possibilities:
@@ -398,6 +414,7 @@ class SolveFutoshiki(Solve):
         row, col = possibilities[0].row, possibilities[0].col
 
         for i in self.__get_possible_values_by_valid((row, col)):
+            # self.step_count += 1
             if self.__valid(i, (row, col)):
                 self.board[row][col] = i
                 if self.solve_btfc():
@@ -414,10 +431,11 @@ class SolveFutoshiki(Solve):
         find = self.find_fist_empty()
         if not find:
             return True
-        self.step_count += 1
+        # self.step_count += 1
         row, col = find
 
         for i in self.avalaible_numbers:
+            self.step_count += 1
             if self.__valid(i, (row, col)):
                 self.board[row][col] = i
                 if self.solve_bt():

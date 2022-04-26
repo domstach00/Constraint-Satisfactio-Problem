@@ -51,3 +51,33 @@ class Graph:
         # plt.tight_layout()
         plt.show()
         self.graph_id += 1
+
+class Graph2:
+    graph_id = 1
+    graph_style = GRAPH_STYLE
+
+    def __init__(self, observators1: 'list[Observator]', observators2: 'list[Observator]'):
+        self.observators_1 = observators1
+        self.observators_2 = observators2
+        self.field_graph_1 = list(range(0, len(observators1)))
+        self.notify_times_1 = []
+        self.visited_nodes_1 = []
+        self.notify_times_2 = []
+        self.visited_nodes_2 = []
+        self.__get_data()
+
+    def __get_data(self):
+        for elem in self.observators_1:
+            self.notify_times_1.append(elem.measured_time)
+            self.visited_nodes_1.append(elem.node_count)
+        for elem in self.observators_2:
+            self.notify_times_2.append(elem.measured_time)
+            self.visited_nodes_2.append(elem.node_count)
+
+    def setting(self):
+        plt.clf()
+        self.graph_name = f"Graph nr_{self.graph_id}"
+        plt.title(self.graph_name)
+        plt.style.use(self.graph_style)
+        # plt.xlim(xmin=0)
+        # plt.ylim(ymin=0)
