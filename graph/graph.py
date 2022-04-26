@@ -3,6 +3,7 @@ from CONSTANTS import *
 from config import *
 from graph.observator import *
 
+
 class Graph:
     graph_id = 1
     graph_style = GRAPH_STYLE
@@ -20,17 +21,33 @@ class Graph:
             self.notify_times.append(elem.measured_time)
             self.visited_nodes.append(elem.node_count)
 
-    def make_graph(self):
-        graph_name = f"Graph nr_{self.graph_id}"
-        plt.title(graph_name)
-        # plt.figtext(.15, .76, 'data')
+    def setting(self):
+        plt.clf()
+        self.graph_name = f"Graph nr_{self.graph_id}"
+        plt.title(self.graph_name)
         plt.style.use(self.graph_style)
+        # plt.xlim(xmin=0)
+        # plt.ylim(ymin=0)
+
+    def make_graph_1(self):
+        # plt.figtext(.15, .76, 'details')
+        self.setting()
         plt.plot(self.field_graph, self.visited_nodes, label='Nodes')
-        plt.xlim(xmin=0)
+        if GRAPH_SAVE:
+            plt.savefig(f'{self.graph_name}.png')
         plt.legend()
         plt.grid(True)
         plt.tight_layout()
+        plt.show()
+        self.graph_id += 1
+
+    def make_graph_2(self):
+        self.setting()
+        plt.plot(self.field_graph, self.notify_times, label='Time')
         if GRAPH_SAVE:
-            plt.savefig(f'{graph_name}.png')
+            plt .savefig(f'{self.graph_name}.png')
+        plt.legend()
+        plt.grid(True)
+        # plt.tight_layout()
         plt.show()
         self.graph_id += 1

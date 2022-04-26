@@ -12,9 +12,9 @@ def binary():
 
 
 def futoshiki():
-    cf = ConfigFutoshiki(4)
+    cf = ConfigFutoshiki(6)
     sf = SolveFutoshiki(cf)
-    sf.solve_bt()
+    sf.solve_btfc()
     sf.end()
     print(f'Solutions: {len(sf.solutions)}')
 

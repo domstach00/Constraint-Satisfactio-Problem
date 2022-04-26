@@ -99,6 +99,13 @@ class SolveBinary(Solve):
         self.solutions = []
         self.start_time = time.time()
         self.observators: 'list[Observator]' = []
+        self.observators.append(Observator(
+            measured_time=0,
+            node_count=0,
+            solutions=0,
+            game_name='Binary',
+            search_type='-'
+        ))
 
     def __check_rows_and_columns(self, val: int, position) -> bool:
         row, col = position
@@ -253,8 +260,7 @@ class SolveBinary(Solve):
 
     def end(self):
         graph = Graph(self.observators, self.config)
-        graph.make_graph()
-
+        graph.make_graph_1()
 
 
 class SolveFutoshiki(Solve):
@@ -269,6 +275,13 @@ class SolveFutoshiki(Solve):
         self.solutions = []
         self.start_time = time.time()
         self.observators: 'list[Observator]' = []
+        self.observators.append(Observator(
+            measured_time=0,
+            node_count=0,
+            solutions=0,
+            game_name='Futoshiki',
+            search_type='-'
+        ))
 
     def __check_equalities(self, val, position):
         row, col = position
@@ -372,7 +385,6 @@ class SolveFutoshiki(Solve):
                 flag = True
         return flag
 
-
     def solve_btfc(self):
         possibilities: 'list[Point]' = self.find_list_of_min_possibilities()
         if not possibilities:
@@ -389,7 +401,8 @@ class SolveFutoshiki(Solve):
             if self.__valid(i, (row, col)):
                 self.board[row][col] = i
                 if self.solve_btfc():
-                    return True
+                    self.solutions.append(list(self.board))
+                    self.__notify(f'Futoshiki_{self.config.width}x{self.config.height}', 'FC')
                 self.board[row][col] = 'x'
 
         if CONSTANTS.GENERAL_IF_PRINT_STEPS:
@@ -409,7 +422,7 @@ class SolveFutoshiki(Solve):
                 self.board[row][col] = i
                 if self.solve_bt():
                     self.solutions.append(list(self.board))
-                    self.__notify(f'Futoshiki_{self.config.width}x{self.config.height}', 'back_tracking')
+                    self.__notify(f'Futoshiki_{self.config.width}x{self.config.height}', 'BT')
                 self.board[row][col] = 'x'
         if CONSTANTS.GENERAL_IF_PRINT_STEPS:
             print(f"Step: {self.step_count}")
@@ -426,4 +439,5 @@ class SolveFutoshiki(Solve):
 
     def end(self):
         graph = Graph(self.observators, self.config)
-        graph.make_graph()
+        graph.make_graph_1()
+        graph.make_graph_2()
