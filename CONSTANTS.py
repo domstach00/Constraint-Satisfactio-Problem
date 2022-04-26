@@ -1,5 +1,6 @@
 """GENERAL"""
 GENERAL_IF_PRINT_STEPS = False
+GENERAL_IF_FIND_RANDOM: bool = False
 
 """GAME 'Binary Puzzle' RULES"""
 GAME_BP_AVAILABLE_VALUES = [1, 0]

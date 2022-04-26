@@ -27,6 +27,7 @@ class Config:
 
 class ConfigBinary(Config):
     def __init__(self, width: int):
+        super().__init__(width)
         self.width = width
         self.height = width
         self.path = f'dane/binary_{width}x{width}'
@@ -46,6 +47,7 @@ class ConfigBinary(Config):
 
 class ConfigFutoshiki(Config):
     def __init__(self, width: int):
+        super().__init__(width)
         self.width = width
         self.height = width
         self.path = f'dane/futoshiki_{width}x{width}'

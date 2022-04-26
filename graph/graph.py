@@ -52,6 +52,7 @@ class Graph:
         plt.show()
         self.graph_id += 1
 
+
 class Graph2:
     graph_id = 1
     graph_style = GRAPH_STYLE
@@ -60,6 +61,7 @@ class Graph2:
         self.observators_1 = observators1
         self.observators_2 = observators2
         self.field_graph_1 = list(range(0, len(observators1)))
+        self.field_graph_2 = list(range(0, len(observators2)))
         self.notify_times_1 = []
         self.visited_nodes_1 = []
         self.notify_times_2 = []
@@ -74,10 +76,40 @@ class Graph2:
             self.notify_times_2.append(elem.measured_time)
             self.visited_nodes_2.append(elem.node_count)
 
-    def setting(self):
+    def setting(self, name=''):
         plt.clf()
-        self.graph_name = f"Graph nr_{self.graph_id}"
+        self.graph_name = f"Graph - porownanie metod sprawdzania {name}"
         plt.title(self.graph_name)
         plt.style.use(self.graph_style)
         # plt.xlim(xmin=0)
         # plt.ylim(ymin=0)
+
+    def make_graph_nodes(self, name=''):
+        self.setting(f'{name} Nodes')
+        plt.plot(self.field_graph_1, self.visited_nodes_1, label='Nodes-FC', color='b')
+        plt.plot(self.field_graph_2, self.visited_nodes_2, label='Nodes-BT', color='r')
+        plt.legend()
+        plt.grid(True)
+        if GRAPH_SAVE:
+            plt.savefig(f'{self.graph_name}.png')
+        plt.show()
+        self.graph_id += 1
+
+    def make_graph_time(self, name=''):
+        self.setting(f'{name} Time')
+        plt.plot(self.field_graph_1, self.notify_times_1, label='Time-FC', color='b')
+        plt.plot(self.field_graph_2, self.notify_times_2, label='Time-BT', color='r')
+        plt.legend()
+        plt.grid(True)
+        plt.show()
+        self.graph_id += 1
+
+    def make_graph_heuristic(self):
+        plt.clf()
+        plt.title('Graph - Heurystyki wybory zmiennej Futoshiki 4x4')
+        plt.style.use(self.graph_style)
+        plt.plot(self.field_graph_1, self.visited_nodes_1, label='Nodes-Find_first_empty', color='b')
+        plt.plot(self.field_graph_2, self.visited_nodes_2, label='Nodes-Find_random_empty', color='r')
+        plt.legend()
+        plt.grid()
+        plt.show()

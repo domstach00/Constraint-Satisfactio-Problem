@@ -64,15 +64,17 @@ class Solve:
                     return row, col
         return None
 
-    def find_random(self) -> (int, int):
+    def find_random_empty(self) -> (int, int):
         count = 0
         while True:
             random_row = random.randint(0, self.config.width - 1)
             random_col = random.randint(0, self.config.height - 1)
-            if self.board[random_row][random_col] != 'x':
+            if self.board[random_row][random_col] == 'x':
+                print(f"WORK {random_row} {random_col} {self.board[random_row][random_col]}")
                 return random_row, random_col
             count += 1
-            if count >= 30:
+            if count >= 50:
+                print('XD')
                 return self.find_fist_empty()
 
     def find_min_possibility(self) -> (int, int):
@@ -107,7 +109,7 @@ class SolveBinary(Solve):
             node_count=0,
             solutions=0,
             game_name='Binary',
-            search_type='-'
+            search_type='INIT'
         ))
 
     def __check_rows_and_columns(self, val: int, position) -> bool:
@@ -228,8 +230,10 @@ class SolveBinary(Solve):
         for i in CONSTANTS.GAME_BP_AVAILABLE_VALUES:
             if self.__valid(i, (row, col)):
                 self.board[row][col] = i
-                if self.solve_btfc():
-                    return True
+                if self.solve_btfc() and self.__valid(i, (row, col)):
+                    self.solutions.append(list(self.board))
+                    self.print_board()
+                    self.__notify(f'Binary_{self.config.width}x{self.config.height}', 'back_tracking')
                 self.board[row][col] = 'x'
             if CONSTANTS.GENERAL_IF_PRINT_STEPS:
                 self.print_board()
@@ -245,9 +249,9 @@ class SolveBinary(Solve):
         for i in CONSTANTS.GAME_BP_AVAILABLE_VALUES:
             if self.__valid(i, (row, col)):
                 self.board[row][col] = i
-                if self.solve_bt():
+                if self.solve_bt() and self.__valid(i, (row, col)):
                     self.solutions.append(list(self.board))
-                    self.__notify(f'Binary_{self.config.width}x{self.config.height}', 'back_tracking')
+                    self.__notify(f'Binary_{self.config.width}x{self.config.height}', 'FC')
                 self.board[row][col] = 'x'
         if CONSTANTS.GENERAL_IF_PRINT_STEPS:
             self.print_board()
@@ -428,14 +432,17 @@ class SolveFutoshiki(Solve):
 
 
     def solve_bt(self):
-        find = self.find_fist_empty()
+        if CONSTANTS.GENERAL_IF_FIND_RANDOM:
+            find = self.find_random_empty()
+        else:
+            find = self.find_fist_empty()
         if not find:
             return True
-        # self.step_count += 1
+        self.step_count += 1
         row, col = find
 
         for i in self.avalaible_numbers:
-            self.step_count += 1
+            # self.step_count += 1
             if self.__valid(i, (row, col)):
                 self.board[row][col] = i
                 if self.solve_bt():
