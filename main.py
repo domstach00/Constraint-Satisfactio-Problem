@@ -48,4 +48,4 @@ def futoshiki_heuristic():
 
 
 if __name__ == '__main__':
-    futoshiki_heuristic()
+    futoshiki(5)
